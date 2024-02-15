@@ -1,15 +1,19 @@
 {
   "name": "backend-project",
   "version": "1.0.0",
-  "description": "a full fledge backend project for learning",
+  "description": "a full fledge backend project for learning", 
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js "
   },
   "keywords": [
     "javascript",
     "backend"
   ],
   "author": "K V D Sridhar",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
 }
