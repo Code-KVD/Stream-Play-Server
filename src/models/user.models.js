@@ -1,4 +1,6 @@
 import mongoose , {Schema} from "mongoose";
+import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt"
 
 const userSchema = new mongoose.Schema({
     username : {
@@ -49,7 +51,7 @@ const userSchema = new mongoose.Schema({
 userSchema.pre("save" , async function (next) {
 
     // Check if the field is modified.
-    if(!isModified("password")){
+    if(!this.isModified("password")){
         return next();
     }
 

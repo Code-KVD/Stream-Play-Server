@@ -10,7 +10,6 @@ const registerUser = asyncHandler( async (req,res)=>{
     const {username, email, fullname,password} = req.body;
 
     // checking if the email is correctly used.
-    console.log("email : ", email);
 
     // basic approach to solve the validation problem.
     // check if anyone of the field is empty.
@@ -32,7 +31,7 @@ const registerUser = asyncHandler( async (req,res)=>{
     }
 
     // here we use the mongoose model to fetch the data from mongodb we used "findOne" function which fetches the data. here we have used or operators to check multiple fields like username or email.
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{username} , {email}]
     });
 
@@ -43,14 +42,25 @@ const registerUser = asyncHandler( async (req,res)=>{
 
     // getting the local path of the avatar and cover image which has been uploaded using multer.
     const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+    // this wil generate error when we do not upload cover image.
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path
 
+    // to solve the above bug we use the following approach...
 
+    let coverImageLocalPath;
+
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage > 0){
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
+    
+    
     // if avatar localpath does not exists then throw error.
+    // console.log(avatarLocalPath);
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar field is required");
     }
-
+    
+    // console.log(avatarLocalPath);
     // storing the avatar and coverImage into clodinary and getting the json response of file.
     const avatar = await uploadOnCloudinary(avatarLocalPath);
 
@@ -58,7 +68,7 @@ const registerUser = asyncHandler( async (req,res)=>{
 
     // if url does not exists then throw error.
     if(!avatar){
-        throw new ApiError(400,"Avatar field is required");
+        throw new ApiError(400,"Avatar field is required cloud");
     }
 
     // uploading the data intot the database.
@@ -67,7 +77,7 @@ const registerUser = asyncHandler( async (req,res)=>{
 
     // here await is used to let the upload happen then move futher in the code.
     const user  =  await User.create({
-        username,
+        username : username.toLowerCase(),
         email,
         fullname,
         avatar : avatar.url,
