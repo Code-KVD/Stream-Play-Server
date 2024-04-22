@@ -21,4 +21,10 @@ app.use(express.static("public"));
 // reading and stroing cookies effectively of the user.
 app.use(cookieParser());
 
+// importing the user route in app.js.
+import userRouter from "./routes/user.routes.js"
+
+// using middleware to tranfer the control to userRouter.
+app.use("/api/v1/users",userRouter);
+
 export default app;
