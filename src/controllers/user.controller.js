@@ -3,6 +3,7 @@ import {ApiError} from "../utils/apiError.js"
 import {User} from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken =  async (userId) =>{
     try {
@@ -193,15 +194,69 @@ const logoutUser = asyncHandler(async (req,res) =>{
         }
     )
 
-    const option = {
+    const options = {
         httpOnly : true,
         secure : true
     }
 
     return res.
     status(200)
-    .clearCookie("accessToken", option)
-    .clearCookie("refreshToken", option)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
     .json(new ApiResponse(200,{},"User logged out Sucessfully"));
 });
-export {registerUser , loginUser ,logoutUser};
+
+const refreshAccessToken = asyncHandler(async (req,res) =>{
+    const clientRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+
+    if(!clientRefreshToken){
+        throw new ApiError(404 , "Refresh token not found");
+    }
+
+    try {
+        const decodedToken = jwt.verify(clientRefreshToken, process.env.REFRESH_TOKEN_SCERET);
+
+        const user = await User.findById(decodedToken._id);
+
+        if(!user){
+            throw new ApiError(404 , "user not found");
+        }
+
+
+        if(clientRefreshToken !== user.refreshToken){
+            throw new ApiError(401,"Invalid refresh Token");
+        }
+
+        const {accessToken , refreshToken} = await generateAccessAndRefreshToken(user._id);
+
+        const options  = {
+            httpOnly : true,
+            secure : true
+        }
+
+        return res.
+        status(200)
+        .cookie("accessToken" , accessToken ,options)
+        .cookie("refreshToken" , refreshToken ,options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    accessToken,
+                    refreshToken
+                },
+                "Access token refreshed sucessfully"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(400,  error?.message || "refresh Token not verified");
+    }
+
+
+});
+export {    registerUser,
+            loginUser,
+            logoutUser,
+            refreshAccessToken
+        };
